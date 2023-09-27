@@ -3,26 +3,28 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class MusicPlayer : MonoBehaviour
-
 {
     [SerializeField] private AudioClip[] _audioClips;
 
-    private static int _lastAudioIndex = 0;
-
-    private Coroutine _audioPlayCoroutine;
     private AudioSource _audioSource;
+    private int _currentClipIndex = 0;
 
     private void Awake()
     {
-        if (FindObjectsOfType<MusicPlayer>().Length > 1)
-        {
-            Destroy(gameObject);
-        }
-
         _audioSource = GetComponent<AudioSource>();
-        SceneManager.activeSceneChanged += OnActiveSceneChanged;
+    }
 
-        DontDestroyOnLoad(gameObject);
+    private void OnActiveSceneChanged(Scene arg0, Scene arg1)
+    {
+        // ќстанавливаем воспроизведение аудио при смене сцены
+        _audioSource.Stop();
+    }
+
+    private void Start()
+    {
+        // Ќачинаем воспроизведение аудио при старте игры
+        PlayCurrentAudioClip();
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
     }
 
     private void OnDestroy()
@@ -30,39 +32,29 @@ public class MusicPlayer : MonoBehaviour
         SceneManager.activeSceneChanged -= OnActiveSceneChanged;
     }
 
-    private void OnActiveSceneChanged(Scene arg0, Scene arg1)
+    private void Update()
     {
-        if (_audioPlayCoroutine != null)
+        // ѕровер€ем, если текущий трек завершилс€, и начинаем следующий
+        if (!_audioSource.isPlaying)
         {
-            StopCoroutine(_audioPlayCoroutine);
-
-            _lastAudioIndex++;
+            PlayNextAudioClip();
         }
-
-        _lastAudioIndex = GetClipIndex();
-        _audioPlayCoroutine = StartCoroutine(GetAudioPlay());
     }
 
-    private IEnumerator GetAudioPlay()
+    private void PlayCurrentAudioClip()
     {
-        while (true)
+        // ¬оспроизводим текущий аудиоклип
+        if (_audioClips.Length > 0)
         {
-            var clip = _audioClips[_lastAudioIndex];
-
-            _audioSource.clip = clip;
+            _audioSource.clip = _audioClips[_currentClipIndex];
             _audioSource.Play();
-
-            yield return new WaitForSeconds(clip.length + Time.deltaTime);
-
-            _audioSource.Stop();
-
-            _lastAudioIndex++;
-            _lastAudioIndex = GetClipIndex();
         }
     }
 
-    private int GetClipIndex()
+    private void PlayNextAudioClip()
     {
-        return _lastAudioIndex % _audioClips.Length;
+        // ”величиваем индекс аудиоклипа и воспроизводим следующий
+        _currentClipIndex = (_currentClipIndex + 1) % _audioClips.Length;
+        PlayCurrentAudioClip();
     }
 }
