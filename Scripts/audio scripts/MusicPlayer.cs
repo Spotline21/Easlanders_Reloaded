@@ -8,6 +8,7 @@ public class MusicPlayer : MonoBehaviour
 
     private AudioSource _audioSource;
     private int _currentClipIndex = 0;
+    private bool _isPaused = false;
 
     private void Awake()
     {
@@ -35,7 +36,7 @@ public class MusicPlayer : MonoBehaviour
     private void Update()
     {
         // ѕровер€ем, если текущий трек завершилс€, и начинаем следующий
-        if (!_audioSource.isPlaying)
+        if (!_audioSource.isPlaying && !_isPaused)
         {
             PlayNextAudioClip();
         }
@@ -56,5 +57,23 @@ public class MusicPlayer : MonoBehaviour
         // ”величиваем индекс аудиоклипа и воспроизводим следующий
         _currentClipIndex = (_currentClipIndex + 1) % _audioClips.Length;
         PlayCurrentAudioClip();
+    }
+
+    private void OnApplicationPause(bool isPaused)
+    {
+        _isPaused = isPaused;
+        if (isPaused)
+        {
+            // »гра была свернута
+            _audioSource.Pause();
+        }
+        else
+        {
+            // »гра развернулась
+            if (!_audioSource.isPlaying)
+            {
+                PlayCurrentAudioClip();
+            }
+        }
     }
 }
